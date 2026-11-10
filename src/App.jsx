@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Loader from './components/Loader.jsx'
-import ParticlesCanvas from './components/ParticlesCanvas.jsx'
+import RedRain from './components/RedRain.jsx'
 import Header from './components/Header.jsx'
 import CvModal from './components/CvModal.jsx'
 import CertModal from './components/CertModal.jsx'
@@ -12,54 +12,53 @@ import Education from './components/Education.jsx'
 import Skills from './components/Skills.jsx'
 import Contact from './components/Contact.jsx'
 import Footer from './components/Footer.jsx'
+import Events from './components/Events.jsx'
+import MobileNav from './components/MobileNav.jsx'
+import useFitSections, { useFullPageWheel } from './useFitSections.js'
 
 export default function App() {
-  const [loaderHidden, setLoaderHidden] = useState(false)
-  const [headerShow, setHeaderShow] = useState(false)
+  const [booted, setBooted] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
   const [cvOpen, setCvOpen] = useState(false)
   const [activeCert, setActiveCert] = useState(null)
 
-  // ===== Loader (mirrors original window.load + 2s delay) =====
+  // One section = one screen on desktop (see useFitSections.js)
+  useFitSections()
+  useFullPageWheel()
+
+  // Boot sequence length
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoaderHidden(true)
-      setHeaderShow(true)
-    }, 2000)
-    return () => clearTimeout(timer)
+    const t = setTimeout(() => setBooted(true), 2400)
+    return () => clearTimeout(t)
   }, [])
 
-  // ===== Header stays visible once scrolled, same as original =====
+  // Escape closes any open modal
   useEffect(() => {
-    const handleScroll = () => setHeaderShow(true)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // ===== Escape key closes whichever modal is open =====
-  useEffect(() => {
-    const handleKey = (e) => {
+    const onKey = (e) => {
       if (e.key !== 'Escape') return
-      if (cvOpen) setCvOpen(false)
-      if (activeCert) setActiveCert(null)
+      setCvOpen(false)
+      setActiveCert(null)
+      setNavOpen(false)
     }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
-  }, [cvOpen, activeCert])
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
-  // ===== Lock body scroll while any modal is open =====
+  // Lock scroll while a modal or the loader is up
   useEffect(() => {
-    document.body.style.overflow = cvOpen || activeCert ? 'hidden' : ''
-  }, [cvOpen, activeCert])
+    document.body.style.overflow = cvOpen || activeCert || !booted ? 'hidden' : ''
+  }, [cvOpen, activeCert, booted])
 
   return (
     <>
-      <div className="noise"></div>
-      <ParticlesCanvas />
-      <Loader hidden={loaderHidden} />
+      <div className="fx-scanlines" aria-hidden="true"></div>
+      <div className="fx-vignette" aria-hidden="true"></div>
+      <div className="fx-grid" aria-hidden="true"></div>
+      <RedRain />
+      <Loader hidden={booted} />
 
       <Header
-        show={headerShow}
+        show={booted}
         navOpen={navOpen}
         setNavOpen={setNavOpen}
         onViewCv={() => { setCvOpen(true); setNavOpen(false) }}
@@ -68,14 +67,18 @@ export default function App() {
       <CvModal open={cvOpen} onClose={() => setCvOpen(false)} />
       <CertModal cert={activeCert} onClose={() => setActiveCert(null)} />
 
-      <Hero />
-      <BugBounty />
-      <Experience />
-      <Projects />
-      <Education onViewCert={setActiveCert} />
-      <Skills />
-      <Contact />
+      <main className="column">
+        <Hero booted={booted} onViewCv={() => setCvOpen(true)} />
+        <BugBounty />
+        <Experience />
+        <Projects />
+        <Skills />
+        <Education onViewCert={setActiveCert} />
+        <Events />
+        <Contact />
+      </main>
       <Footer />
+      <MobileNav onViewCv={() => setCvOpen(true)} />
     </>
   )
 }
