@@ -1532,10 +1532,13 @@ section { position: relative; padding: 120px 0 40px; }
   .evt-btn { height: 380px; }
 }
 
-/* full-page desktop mode: keep the gallery within one screen */
+/* full-page desktop mode: same proportions as Clearance — the section shares its
+   scale (data-fit-match="education"), and a 2x2 grid sized to Clearance's content
+   height fills the screen the same way */
 @media (min-width: 1024px) and (min-height: 560px) {
   .evt-head { margin-bottom: 3.6vh; }
-  .evt-btn { height: clamp(300px, 52vh, 520px); }
+  .evt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; } /* = .deg-grid gap */
+  .evt-btn { height: 380px; }
 }
 
 /* =========================================================

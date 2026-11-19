@@ -5,10 +5,10 @@ import { useSwipe, SwipeDots } from '../mobile.jsx'
 
 // Captions are deliberately factual and date-free; edit them to name the exact event.
 const shots = [
-  { src: '/events/lebanon-ctf-2026.webp', w: 947, h: 1263, tag: 'CTF', title: 'Lebanon CTF 2026', sub: 'CTF Player · Team H.Y.D.R.A · LAU Beirut, 15 Nov 2026' },
-  { src: '/events/hacking-day-badge.webp', w: 1400, h: 933, tag: 'Badge', title: 'Semicolon Hacking Day', sub: 'Event badge · Beirut, Lebanon' },
-  { src: '/events/certificate.webp', w: 542, h: 602, tag: 'Award', title: 'Certificate on stage', sub: 'Semicolon event' },
-  { src: '/events/event-day.webp', w: 298, h: 332, tag: 'Community', title: 'Event day', sub: 'Semicolon community' },
+  { src: '/events/lebanon-ctf-2026.webp', w: 947, h: 1263, pos: '42% 72%', tag: 'CTF', title: 'Lebanon CTF 2026', sub: 'CTF Player · Team H.Y.D.R.A · LAU Beirut, 15 Nov 2026' },
+  { src: '/events/hacking-day-badge.webp', w: 1400, h: 933, pos: '50% 45%', tag: 'Badge', title: 'Semicolon Hacking Day', sub: 'Event badge · Beirut, Lebanon' },
+  { src: '/events/certificate.webp', w: 542, h: 602, pos: '50% 22%', tag: 'Award', title: 'Certificate on stage', sub: 'Semicolon event' },
+  { src: '/events/event-day.webp', w: 298, h: 332, pos: '50% 28%', tag: 'Community', title: 'Event day', sub: 'Semicolon community' },
 ]
 
 function Lightbox({ index, onClose, onGo }) {
@@ -77,7 +77,7 @@ export default function Events() {
   const goBy = useCallback((d) => setOpen((i) => (i + d + shots.length) % shots.length), [])
 
   return (
-    <section id="events" className="evt">
+    <section id="events" className="evt" data-fit-match="education">
       <HeroWave mesh className="fnd-wave" />
 
       <div className="fnd-wrap">
@@ -100,7 +100,7 @@ export default function Events() {
                 onClick={(e) => { lastTrigger.current = e.currentTarget; setOpen(i) }}
                 aria-label={`Open photo: ${s.title}`}
               >
-                <img src={s.src} alt={`${s.title} — ${s.sub}`} width={s.w} height={s.h} loading="lazy" />
+                <img src={s.src} alt={`${s.title} — ${s.sub}`} width={s.w} height={s.h} loading="lazy" style={{ objectPosition: s.pos }} />
                 <span className="evt-zoom" aria-hidden="true"><i className="fa-solid fa-expand"></i></span>
                 <span className="evt-cap">
                   <span className="ev-tag">{s.tag}</span>

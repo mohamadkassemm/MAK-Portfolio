@@ -25,6 +25,7 @@ export default function useFitSections(deps = []) {
     const apply = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
+        const fits = {} // scale chosen per section id (for data-fit-match)
         for (const [sec, wrap] of pairs) {
           wrap.classList.add('fit-wrap')
           if (!mq.matches) {
@@ -41,7 +42,12 @@ export default function useFitSections(deps = []) {
           const natural = wrap.offsetHeight // layout height ignores transforms
           // fit both height and width (content is laid out at a desktop design width)
           const fit = Math.min(1, avail / natural, sec.clientWidth / wrap.offsetWidth)
-          const s = Math.max(fit, MIN_SCALE)
+          let s = Math.max(fit, MIN_SCALE)
+          // data-fit-match="<section id>": never render larger than that (earlier) section,
+          // so both share the same type sizes, margins and content width on screen
+          const match = sec.dataset.fitMatch && fits[sec.dataset.fitMatch]
+          if (match) s = Math.min(s, match)
+          fits[sec.id] = s
           if (fit < MIN_SCALE) {
             sec.dataset.tall = ''
             // second snap point so the bottom of a taller-than-screen section is reachable
