@@ -1477,7 +1477,7 @@ section { position: relative; padding: 120px 0 40px; }
    ========================================================= */
 .evt { position: relative; overflow: hidden; padding: 100px 0 130px; }
 .evt-head { position: relative; margin-bottom: 44px; max-width: 760px; }
-.evt-grid { position: relative; display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.evt-grid { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 .evt-card {
   --c: 22px; position: relative; padding: 1.5px;
   background: linear-gradient(170deg, #ff3346, rgba(255, 45, 64, .45) 45%, #ff3346);
@@ -1529,7 +1529,6 @@ section { position: relative; padding: 120px 0 40px; }
 
 @media (max-width: 1023px), (max-width: 1280px) and (max-height: 559px) {
   .evt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .evt-card:first-child { grid-column: 1 / -1; }
   .evt-btn { height: 380px; }
 }
 
@@ -2085,4 +2084,41 @@ section { position: relative; padding: 120px 0 40px; }
     clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   }
   .con-brief::after { width: 28px; height: 14px; right: 10px; bottom: 4px; }
+}
+
+/* =========================================================
+   Scroll performance
+   ========================================================= */
+/* progress bar animates with a transform (compositor only) instead of width */
+.nav-progress i { width: 100%; transform: scaleX(0); transform-origin: 0 50%; will-change: transform; }
+
+/* Touch screens (phones, tablets, touch-only devices): pure native scrolling.
+   Desktop (mouse/trackpad) is not matched and keeps its full-page behaviour. */
+@media (max-width: 1023px), (hover: none) and (pointer: coarse) {
+  /* no snapping of any kind on the page itself */
+  html { scroll-snap-type: none !important; }
+  main.column > section, .site-footer { scroll-snap-align: none !important; scroll-snap-stop: normal !important; }
+
+  /* fixed full-screen overlays: own GPU layers, no per-frame blend repaint.
+     Multiplying black lines == drawing them normally at the same opacity, so it looks identical. */
+  .fx-scanlines { mix-blend-mode: normal; }
+  .fx-scanlines, .fx-vignette, .fx-grid, .fx-rain { transform: translateZ(0); }
+
+  /* backdrop blur on fixed bars re-renders on every scroll frame on phones;
+     a slightly more opaque fill keeps the same look */
+  #siteHeader.scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(8, 3, 4, .95); }
+  .m-nav { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(9, 3, 5, .97); }
+  .modal, .lbx { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .modal { background: rgba(4, 1, 2, .92); }
+  .lbx { background: rgba(4, 1, 2, .97); }
+}
+
+/* Looping decorations pause when their section is off screen (no visual change),
+   and on touch screens also while a scroll is in progress (see src/useScrollPerf.js).
+   Only these specific looping elements are listed: entrance animations are never paused. */
+[data-offscreen] :is(.caret, .hcaret, .hn-cursor, .fm-txt i, .hero-scroll i, .mq-track, .deg-dot, .ft-eof-txt i, .hterm-live i, .m-livebar b, .opl-live i, .term-rec, .con-sweep, .hv-ring),
+[data-offscreen] .glitch::before, [data-offscreen] .glitch::after, [data-offscreen] .opl-line::after,
+html.is-scrolling :is(.caret, .hcaret, .hn-cursor, .mq-track, .deg-dot, .ft-eof-txt i, .hterm-live i, .m-livebar b, .opl-live i, .term-rec, .con-sweep, .hv-ring),
+html.is-scrolling .glitch::before, html.is-scrolling .glitch::after, html.is-scrolling .opl-line::after {
+  animation-play-state: paused !important;
 }

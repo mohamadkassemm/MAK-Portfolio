@@ -2,6 +2,12 @@ import { useEffect, useRef } from 'react'
 
 // Red "digital rain" that lives on the edges of the screen (masked out in the
 // centre via CSS), echoing the bleeding side columns of a red-team HUD.
+//
+// Performance: on phones / touch screens it renders at 1x pixel density, at a
+// lower frame rate, and pauses while the page is being scrolled, so the GPU
+// and main thread are free for touch scrolling. Desktop rendering is unchanged.
+const LITE_MQ = '(max-width: 1023px), (hover: none) and (pointer: coarse)'
+
 export default function RedRain() {
   const ref = useRef(null)
 
@@ -9,15 +15,18 @@ export default function RedRain() {
     const canvas = ref.current
     const ctx = canvas.getContext('2d')
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const lite = window.matchMedia(LITE_MQ).matches
     const glyphs = '01アカサタナハマヤラワ<>/\\{}[]#$%&*+=ABCDEF0123456789'
     const size = 14
+    const frameMs = lite ? 90 : 55
     let cols = 0
     let drops = []
-    let raf
+    let raf = 0
     let last = 0
+    let scrollingUntil = 0
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const dpr = lite ? 1 : Math.min(window.devicePixelRatio || 1, 2)
       canvas.width = window.innerWidth * dpr
       canvas.height = window.innerHeight * dpr
       canvas.style.width = window.innerWidth + 'px'
@@ -29,7 +38,8 @@ export default function RedRain() {
 
     const draw = (t) => {
       raf = requestAnimationFrame(draw)
-      if (t - last < 55) return
+      if (t - last < frameMs) return
+      if (lite && t < scrollingUntil) return // hold still while the user scrolls
       last = t
       ctx.fillStyle = 'rgba(7, 3, 4, 0.14)'
       ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
@@ -44,12 +54,31 @@ export default function RedRain() {
       }
     }
 
+    const start = () => { if (!raf && !reduce && !document.hidden) raf = requestAnimationFrame(draw) }
+    const stop = () => { cancelAnimationFrame(raf); raf = 0 }
+    const onVisibility = () => (document.hidden ? stop() : start())
+    const onScroll = () => { scrollingUntil = performance.now() + 180 }
+
+    // on phones the browser bar showing/hiding fires resize constantly: only
+    // rebuild the canvas when the width changes (or the height changes a lot)
+    let lastW = window.innerWidth
+    let lastH = window.innerHeight
+    const onResize = () => {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      if (!lite || w !== lastW || Math.abs(h - lastH) > 120) { lastW = w; lastH = h; resize() }
+    }
+
     resize()
-    window.addEventListener('resize', resize)
-    if (!reduce) raf = requestAnimationFrame(draw)
+    window.addEventListener('resize', onResize)
+    document.addEventListener('visibilitychange', onVisibility)
+    if (lite) window.addEventListener('scroll', onScroll, { passive: true })
+    start()
     return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('resize', resize)
+      stop()
+      window.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('scroll', onScroll)
     }
   }, [])
 

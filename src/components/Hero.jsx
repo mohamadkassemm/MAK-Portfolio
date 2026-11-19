@@ -129,8 +129,26 @@ function useTerminal(start) {
   return { lines, typing }
 }
 
+// Owns the typing state on its own, so each keystroke re-renders only these lines
+// instead of the whole hero (keeps scrolling smooth on phones).
+function TerminalBody({ start }) {
+  const { lines, typing } = useTerminal(start)
+  return (
+    <div className="hterm-body" aria-label="Terminal demo">
+      {lines.map((l, i) => (
+        <div key={i} className={`hl hl-${l.t}`}>
+          {l.t === 'cmd' && <span className="hp">[~] </span>}
+          {l.v}
+        </div>
+      ))}
+      <div className="hl hl-cmd">
+        <span className="hp">[~] </span>{typing}<span className="hcaret"></span>
+      </div>
+    </div>
+  )
+}
+
 export default function Hero({ booted, onViewCv }) {
-  const { lines, typing } = useTerminal(booted)
 
   return (
     <section id="home" className={`hero ${booted ? 'go' : ''}`}>
@@ -198,17 +216,7 @@ export default function Hero({ booted, onViewCv }) {
                 <span className="hterm-title">root@mak:~</span>
                 <span className="hterm-live"><i></i> LIVE</span>
               </div>
-              <div className="hterm-body" aria-label="Terminal demo">
-                {lines.map((l, i) => (
-                  <div key={i} className={`hl hl-${l.t}`}>
-                    {l.t === 'cmd' && <span className="hp">[~] </span>}
-                    {l.v}
-                  </div>
-                ))}
-                <div className="hl hl-cmd">
-                  <span className="hp">[~] </span>{typing}<span className="hcaret"></span>
-                </div>
-              </div>
+              <TerminalBody start={booted} />
             </div>
           </div>
         </div>

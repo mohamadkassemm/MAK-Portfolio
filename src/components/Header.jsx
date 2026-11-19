@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const links = [
   { id: 'home', label: 'Home' },
@@ -12,19 +12,33 @@ const links = [
 
 export default function Header({ show, navOpen, setNavOpen, onViewCv }) {
   const [active, setActive] = useState('home')
-  const [progress, setProgress] = useState(0)
   const [scrolled, setScrolled] = useState(false)
+  const barRef = useRef(null)
 
+  // Scroll work is batched to one update per frame. The progress bar is written
+  // straight to the DOM (a compositor-only transform), so scrolling never
+  // re-renders React; state only changes when "scrolled" actually flips.
   useEffect(() => {
-    const onScroll = () => {
+    let raf = 0
+    let wasScrolled = null
+    const update = () => {
+      raf = 0
       const h = document.documentElement
       const max = h.scrollHeight - h.clientHeight
-      setProgress(max > 0 ? (h.scrollTop / max) * 100 : 0)
-      setScrolled(h.scrollTop > 30)
+      const p = max > 0 ? h.scrollTop / max : 0
+      if (barRef.current) barRef.current.style.transform = `scaleX(${p.toFixed(4)})`
+      const s = h.scrollTop > 30
+      if (s !== wasScrolled) { wasScrolled = s; setScrolled(s) }
     }
-    onScroll()
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update) }
+    update()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [])
 
   useEffect(() => {
@@ -78,7 +92,7 @@ export default function Header({ show, navOpen, setNavOpen, onViewCv }) {
           </button>
         </nav>
       </div>
-      <div className="nav-progress"><i style={{ width: `${progress}%` }}></i></div>
+      <div className="nav-progress"><i ref={barRef}></i></div>
     </header>
   )
 }

@@ -2,6 +2,12 @@ import { useEffect, useRef } from 'react'
 
 // Red terrain that rolls along the bottom of a section.
 // Default: dotted particles (hero). `mesh`: wireframe grid (findings).
+//
+// Performance: the animation loop only runs while the canvas is on screen and
+// the tab is visible. On phones / touch screens it also renders at 1x density,
+// caps at ~30fps and pauses while the page is scrolling. Desktop looks the same.
+const LITE_MQ = '(max-width: 1023px), (hover: none) and (pointer: coarse)'
+
 export default function HeroWave({ mesh = false, className = 'hero-wave' }) {
   const ref = useRef(null)
 
@@ -9,10 +15,11 @@ export default function HeroWave({ mesh = false, className = 'hero-wave' }) {
     const canvas = ref.current
     const ctx = canvas.getContext('2d')
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let w = 0, h = 0, raf, t = 0, visible = true
+    const lite = window.matchMedia(LITE_MQ).matches
+    let w = 0, h = 0, raf = 0, t = 0, visible = false, last = 0, scrollingUntil = 0
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const dpr = lite ? 1 : Math.min(window.devicePixelRatio || 1, 2)
       w = canvas.clientWidth; h = canvas.clientHeight
       canvas.width = w * dpr; canvas.height = h * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -80,19 +87,39 @@ export default function HeroWave({ mesh = false, className = 'hero-wave' }) {
       mesh ? drawMesh() : drawDots()
     }
 
-    const loop = () => {
+    const loop = (now) => {
       raf = requestAnimationFrame(loop)
-      if (!visible) return
-      t += 0.008
+      if (lite) {
+        if (now < scrollingUntil) return // hold still while the user scrolls
+        if (now - last < 33) return      // ~30fps is plenty for a slow wave
+        t += 0.008 * Math.min(3, (now - last) / 16.7)
+      } else {
+        t += 0.008
+      }
+      last = now
       draw()
     }
+    const start = () => { if (!raf && !reduce && visible && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(loop) } }
+    const stop = () => { cancelAnimationFrame(raf); raf = 0 }
 
-    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting })
+    // only animate while on screen
+    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop() })
     io.observe(canvas)
+    const onVisibility = () => (document.hidden ? stop() : start())
+    const onScroll = () => { scrollingUntil = performance.now() + 180 }
+    let lastW = window.innerWidth
+    const onResize = () => { if (!lite || window.innerWidth !== lastW) { lastW = window.innerWidth; resize(); draw() } }
+
     resize(); draw()
-    window.addEventListener('resize', resize)
-    if (!reduce) raf = requestAnimationFrame(loop)
-    return () => { cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener('resize', resize) }
+    window.addEventListener('resize', onResize)
+    document.addEventListener('visibilitychange', onVisibility)
+    if (lite) window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      stop(); io.disconnect()
+      window.removeEventListener('resize', onResize)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [mesh])
 
   return <canvas ref={ref} className={className} aria-hidden="true" />

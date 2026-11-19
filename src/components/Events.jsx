@@ -5,6 +5,7 @@ import { useSwipe, SwipeDots } from '../mobile.jsx'
 
 // Captions are deliberately factual and date-free; edit them to name the exact event.
 const shots = [
+  { src: '/events/lebanon-ctf-2026.webp', w: 947, h: 1263, tag: 'CTF', title: 'Lebanon CTF 2026', sub: 'CTF Player · Team H.Y.D.R.A · LAU Beirut, 15 Nov 2026' },
   { src: '/events/hacking-day-badge.webp', w: 1400, h: 933, tag: 'Badge', title: 'Semicolon Hacking Day', sub: 'Event badge · Beirut, Lebanon' },
   { src: '/events/certificate.webp', w: 542, h: 602, tag: 'Award', title: 'Certificate on stage', sub: 'Semicolon event' },
   { src: '/events/event-day.webp', w: 298, h: 332, tag: 'Community', title: 'Event day', sub: 'Semicolon community' },

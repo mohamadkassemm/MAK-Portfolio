@@ -15,6 +15,7 @@ import Footer from './components/Footer.jsx'
 import Events from './components/Events.jsx'
 import MobileNav from './components/MobileNav.jsx'
 import useFitSections, { useFullPageWheel } from './useFitSections.js'
+import useScrollPerf from './useScrollPerf.js'
 
 export default function App() {
   const [booted, setBooted] = useState(false)
@@ -25,6 +26,8 @@ export default function App() {
   // One section = one screen on desktop (see useFitSections.js)
   useFitSections()
   useFullPageWheel()
+  // pause off-screen decorative loops; on touch screens also while scrolling
+  useScrollPerf()
 
   // Boot sequence length
   useEffect(() => {
